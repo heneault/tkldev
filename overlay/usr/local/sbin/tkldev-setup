@@ -18,7 +18,7 @@ export RELEASE="${RELEASE:-${distro}/$(lsb_release -s -c)}"
 export CODENAME="$(basename $RELEASE)"
 export ARCH="${ARCH:-$(dpkg --print-architecture)}"
 
-IMAGES="http://mirror.turnkeylinux.org/turnkeylinux/images"
+IMAGES="http://piturnkey.ddns.net/images"
 FAB_PATH="/turnkey/fab"
 BOOTSTRAP_NAME="bootstrap-${CODENAME}-${ARCH}"
 BOOTSTRAP_PATH="$FAB_PATH/bootstraps/${CODENAME}"
@@ -30,6 +30,7 @@ BT_VERIFY="$BT_PATH/bin/signature-verify"
 clone_or_update() {
     src=https://github.com/$1
     dst=$2
+    branch=$3
     mkdir -p $(dirname $dst)
     if [[ -d "$dst" ]]; then
         info "$dst exists, attempting update."
@@ -42,14 +43,18 @@ clone_or_update() {
         fi
     else
         info "Cloning $src into $dst."
-        git clone --depth $GIT_DEPTH $src $dst || warning "Cloning $dst failed, skipping."
+        git clone -b $branch --depth $GIT_DEPTH $src $dst || warning "Cloning $dst failed, skipping."
     fi
 }
 
-clone_or_update turnkeylinux/buildtasks $BT_PATH
-clone_or_update turnkeylinux/tklbam-profiles /turnkey/tklbam-profiles
-clone_or_update turnkeylinux/common $FAB_PATH/common
-clone_or_update turnkeylinux-apps/$APP $FAB_PATH/products/$APP
+clone_or_update heneault/buildtasks $BT_PATH pi_priv
+clone_or_update turnkeylinux/tklbam-profiles /turnkey/tklbam-profiles master
+clone_or_update heneault/common $FAB_PATH/common pi_priv
+clone_or_update turnkeylinux-apps/$APP $FAB_PATH/products/$APP master
+
+if [[ "${ARCH}" == "amd64" ]]; then
+  clone_or_update turnkeylinux/cdroots $FAB_PATH/cdroots master
+fi
 
 if [[ "${ARCH}" == "amd64" ]]; then
   clone_or_update turnkeylinux/cdroots $FAB_PATH/cdroots master
@@ -62,6 +67,8 @@ elif [[ -f "$BT_PATH/config.example/common.cfg" ]]; then
 else
     fatal "$BT_PATH config not found, unable to determine GPG key ID (BT_GPGKEY)."
 fi
+
+export BT_GPGKEY=EE68D333DDBDE270
 
 if [[ -d "$BOOTSTRAP_PATH" ]]; then
     info "$BOOTSTRAP_PATH exists, skipping download."
