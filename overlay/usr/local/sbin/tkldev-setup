@@ -68,8 +68,6 @@ else
     fatal "$BT_PATH config not found, unable to determine GPG key ID (BT_GPGKEY)."
 fi
 
-export BT_GPGKEY=EE68D333DDBDE270
-
 if [[ -d "$BOOTSTRAP_PATH" ]]; then
     info "$BOOTSTRAP_PATH exists, skipping download."
 else
